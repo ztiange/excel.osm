@@ -1,7 +1,8 @@
 package osm.tuplelike.excel
 
 import cats._
-import cats.instances._
+import cats.implicits._
+import cats.data._
 
 import org.apache.poi.hssf.usermodel.HSSFPicture
 import org.apache.poi.ss.usermodel.Cell
@@ -10,6 +11,10 @@ import org.apache.poi.hssf.usermodel.HSSFPatriarch
 import collection.JavaConverters._
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor
 
+
+/**
+ * pictures in excel are decorded as byte array
+ */
 case class Picture(data: Array[Byte])
   
 def getPicture(cell: Cell): Option[HSSFPicture] = {
@@ -25,9 +30,18 @@ def getPicture(col: Int, row: Int, sheet: Sheet): Option[HSSFPicture] = {
   for (shape <- shapeList) {
     if (shape.isInstanceOf[HSSFPicture]) {
       val anchor = shape.getAnchor.asInstanceOf[HSSFClientAnchor]
-      if (anchor.getCol2 == col && anchor.getRow2 == row)
+      if (anchor.getCol1 == col && anchor.getRow1 == row)
         return Some(shape.asInstanceOf[HSSFPicture])
     }
   }
   return None
+}
+
+
+given Codec[Picture] with{
+  def encode(v: Picture) = ???
+  def decode(c: Cell) = 
+    getPicture(c)
+      .map(p => Picture(p.getPictureData.getData))
+      .toValidNel[String](s"${c.getColumnIndex}:Not a valid picture")
 }

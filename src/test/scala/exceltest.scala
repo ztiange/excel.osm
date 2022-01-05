@@ -79,4 +79,20 @@ class ExcelTest{
     targetRow.encodeFrom(c)
     assertEquals(targetRow.decodeAs[C],Valid(C("1221",1)))
   }  
+
+  @Test def decordPictureTest() : Unit = {
+    case class HasPicture(
+      No: Int,
+      picture1: Picture,
+      picture2: Picture,
+    )
+    val firstRow = getSheet("/test.xls",3).getRow(1)
+    val record = firstRow.decodeAs[HasPicture]
+    val sized = record.map(r=>(r.No,r._2.data.size,r._3.data.size))
+
+    assertEquals(sized,Valid((1,25221,35176)))
+
+  }
+
+
 }
