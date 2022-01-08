@@ -12,6 +12,3 @@ object DateTimeFormat:
 opaque type DateTime = Date
 object DateTime:
   def apply(value: Date): DateTime = value
-
-
-

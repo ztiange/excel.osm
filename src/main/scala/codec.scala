@@ -9,19 +9,10 @@ import cats.data.Validated._
 import java.util.Date
 import cats.syntax.try_
 
-def tryNel[A](f: => A): ValidatedValue[A] = {
-  catchNonFatal { f }.leftMap(x => NonEmptyList.one(x.getMessage))
-}
 
-inline def cast[T](f: Any): ValidatedValue[T] =
-  catchNonFatal { f.asInstanceOf[T] }.leftMap(ee =>
-    NonEmptyList.one(s"Cast Error: ${ee.getMessage}")
-  )
-
-type ValidatedValue[T] = ValidatedNel[String, T]
 
 /**
- * Codec为一个“外部的数据结构”与Scala的类型之间相互转换的typeclass。
+ * Codec为一个“外部数据结构”与Scala的类型之间相互转换的typeclass。
  * 典型的“外部数据结构”有 csv 或者 excel 中的一条数据或者一行数据
  * 
  * 对于csv有 type CsvCodec[S] = Codec[S,String]
@@ -30,6 +21,7 @@ type ValidatedValue[T] = ValidatedNel[String, T]
  * 在这里假设从Scala的数据T变换为外部数据S时，只要编译通过便不会发生错误，而反方向作为输入，可能会发生格式解析的错误。
  */
 trait Codec[S, T] {
+  //TODO how to model side effect?
   def encode(v: S): (T) => T
   def decode(v: T): ValidatedValue[S]
 }
@@ -44,7 +36,7 @@ end summonAllCodec
 
 /**
  * “外部的”一个可以转换为Tuple的数据
- * 比如csv中的一行为TupleLike[String], excel中的一行为TupleLike[Row]
+ * 比如csv中的一行为TupleLike[String], excel中的一行为TupleLike[Cell]
  */
 trait TupleLike[T]{
   def length():Int
@@ -61,12 +53,12 @@ inline def Decoder[S,T](using
 
 def Decoder_T[S,T](using
     m: Mirror.ProductOf[S]
-)(vs: List[Codec[Any, T]]): TupleLike[T] => ValidatedValue[S] =
+)(codeces: List[Codec[Any, T]]): TupleLike[T] => ValidatedValue[S] =
   record => {
-    if (vs.length > record.length())
-      (s"行长度不足，需要${vs.length}项，只有${record.length()}项").invalidNel
+    if (codeces.length > record.length())
+      (s"行长度不足，需要${codeces.length}项，只有${record.length()}项").invalidNel
     else
-      vs.zip(record.components())
+      codeces.zip(record.components())
         .map((codec, strv) =>
           codec
             .decode(strv)

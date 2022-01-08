@@ -11,14 +11,17 @@ given Codec[Int] with {
   def encode(v: Int) = (_) => v.toString
   def decode(v: String) = tryNel { v.toInt }
 }
+
 given Codec[Float] with {
   def encode(v: Float) = (_) => v.toString
   def decode(v: String) = tryNel { v.toFloat }
 }
+
 given Codec[Double] with {
   def encode(v: Double) = (_) => v.toString
   def decode(v: String) = tryNel { v.toDouble }
 }
+
 given Codec[String] with {
   def encode(v: String) = (_) => v
   def decode(v: String) = tryNel { v }
